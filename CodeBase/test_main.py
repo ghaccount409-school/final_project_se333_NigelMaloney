@@ -1,9 +1,14 @@
 import runpy
+import json
 import pytest
 from unittest.mock import patch
 from main import (
     analyze_coverage, generate_test_report, detect_code_smells,
-    scan_security_risks, enforce_style_guide, check_complexity
+    scan_security_risks, enforce_style_guide, check_complexity,
+    evaluate_jacoco_report, evaluate_pmd_report,
+    evaluate_spotbugs_report, evaluate_codeql_sarif,
+    check_java_quality_prerequisites,
+    run_java_quality_evaluation,
 )
 
 
@@ -233,6 +238,163 @@ class TestCheckComplexity:
         
         result_10 = check_complexity(10, 50)
         assert result_10["complexity_level"] == "moderate"
+
+
+class TestRealQualityIntegration:
+    def test_check_java_quality_prerequisites_ready_with_wrapper(self, tmp_path):
+        project_path = tmp_path / "java-project"
+        project_path.mkdir(parents=True)
+        (project_path / "pom.xml").write_text("<project></project>", encoding="utf-8")
+        (project_path / "mvnw.cmd").write_text("echo maven", encoding="utf-8")
+
+        with patch("main.shutil.which") as mock_which:
+            mock_which.side_effect = lambda cmd: "C:/Java/bin/java.exe" if cmd == "java" else None
+            result = check_java_quality_prerequisites(str(project_path))
+
+        assert result["ready"] is True
+        assert result["checks"]["java_available"] is True
+        assert result["checks"]["maven_wrapper_available"] is True
+
+    def test_check_java_quality_prerequisites_missing_requirements(self, tmp_path):
+        project_path = tmp_path / "java-project"
+        project_path.mkdir(parents=True)
+
+        with patch("main.shutil.which", return_value=None):
+            result = check_java_quality_prerequisites(str(project_path))
+
+        assert result["ready"] is False
+        assert "pom.xml not found in project path" in result["missing"]
+        assert "Java runtime not found in PATH" in result["missing"]
+
+    def test_evaluate_jacoco_report(self, tmp_path):
+        report_path = tmp_path / "jacoco.xml"
+        report_path.write_text(
+            '<report><counter type="LINE" missed="10" covered="90"/></report>',
+            encoding="utf-8",
+        )
+
+        result = evaluate_jacoco_report(str(report_path))
+
+        assert result["status"] == "ok"
+        assert result["coverage"] == 90.0
+        assert result["level"] == "good"
+
+    def test_evaluate_pmd_report(self, tmp_path):
+        report_path = tmp_path / "pmd.xml"
+        report_path.write_text(
+            """
+            <pmd>
+              <file name="X.java">
+                <violation priority="1">critical issue</violation>
+                <violation priority="3">minor issue</violation>
+              </file>
+            </pmd>
+            """,
+            encoding="utf-8",
+        )
+
+        result = evaluate_pmd_report(str(report_path))
+
+        assert result["status"] == "ok"
+        assert result["violations"] == 2
+        assert result["risk_level"] == "high"
+
+    def test_evaluate_spotbugs_report(self, tmp_path):
+        report_path = tmp_path / "spotbugsXml.xml"
+        report_path.write_text(
+            """
+            <BugCollection>
+              <BugInstance priority="2" category="SECURITY"/>
+              <BugInstance priority="4" category="STYLE"/>
+            </BugCollection>
+            """,
+            encoding="utf-8",
+        )
+
+        result = evaluate_spotbugs_report(str(report_path))
+
+        assert result["status"] == "ok"
+        assert result["findings"] == 2
+        assert result["category_counts"]["SECURITY"] == 1
+        assert result["risk_level"] == "high"
+
+    def test_evaluate_codeql_sarif(self, tmp_path):
+        report_path = tmp_path / "codeql.sarif"
+        report_path.write_text(
+            json.dumps(
+                {
+                    "runs": [
+                        {
+                            "results": [
+                                {"level": "error", "ruleId": "java/sql-injection"},
+                                {"level": "warning", "ruleId": "java/path-injection"},
+                            ]
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = evaluate_codeql_sarif(str(report_path))
+
+        assert result["status"] == "ok"
+        assert result["results"] == 2
+        assert result["level_counts"]["error"] == 1
+        assert result["risk_level"] == "critical"
+
+    def test_run_java_quality_evaluation_with_mocked_commands(self, tmp_path):
+        project_path = tmp_path / "java-project"
+        (project_path / "target" / "site" / "jacoco").mkdir(parents=True)
+        (project_path / "target").mkdir(parents=True, exist_ok=True)
+
+        (project_path / "pom.xml").write_text("<project></project>", encoding="utf-8")
+        (project_path / "target" / "site" / "jacoco" / "jacoco.xml").write_text(
+            '<report><counter type="LINE" missed="0" covered="10"/></report>',
+            encoding="utf-8",
+        )
+        (project_path / "target" / "pmd.xml").write_text("<pmd></pmd>", encoding="utf-8")
+        (project_path / "target" / "spotbugsXml.xml").write_text(
+            "<BugCollection></BugCollection>",
+            encoding="utf-8",
+        )
+
+        class Completed:
+            def __init__(self):
+                self.returncode = 0
+                self.stdout = "ok"
+                self.stderr = ""
+
+        with patch("main.subprocess.run", return_value=Completed()), patch(
+            "main.check_java_quality_prerequisites",
+            return_value={"ready": True, "checks": {}, "resolved": {}, "missing": []},
+        ):
+            result = run_java_quality_evaluation(str(project_path))
+
+        assert result["status"] == "ok"
+        assert result["evaluations"]["jacoco"]["coverage"] == 100.0
+        assert result["evaluations"]["pmd"]["violations"] == 0
+        assert result["evaluations"]["spotbugs"]["findings"] == 0
+        assert result["evaluations"]["codeql"]["status"] == "not_provided"
+
+    def test_run_java_quality_evaluation_fails_preflight(self, tmp_path):
+        project_path = tmp_path / "java-project"
+        project_path.mkdir(parents=True)
+
+        with patch(
+            "main.check_java_quality_prerequisites",
+            return_value={
+                "ready": False,
+                "checks": {"java_available": False},
+                "resolved": {},
+                "missing": ["Java runtime not found in PATH"],
+            },
+        ):
+            result = run_java_quality_evaluation(str(project_path))
+
+        assert result["status"] == "error"
+        assert result["message"] == "Prerequisite check failed"
+        assert result["preflight"]["ready"] is False
 
 
 # ============================================================================
