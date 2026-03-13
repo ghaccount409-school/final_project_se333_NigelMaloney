@@ -51,6 +51,7 @@ This MCP server exposes six code quality analysis tools aligned with the workflo
 # 1. Clone the repository
 git clone https://github.com/ghaccount409-school/final_project_se333_NigelMaloney.git
 cd final_project_se333_NigelMaloney
+cd CodeBase
 
 # 2. Install dependencies (creates .venv automatically)
 uv sync
@@ -96,7 +97,7 @@ Add the following to `%APPDATA%\Code\User\mcp.json` (Windows) or `~/.config/Code
   "mcpServers": {
     "se333-server": {
       "command": "uv",
-      "args": ["run", "python", "/absolute/path/to/main.py"]
+      "args": ["run", "python", "/absolute/path/to/final_project_se333_NigelMaloney/CodeBase/main.py"]
     }
   }
 }
@@ -350,6 +351,9 @@ check_complexity(cyclomatic_complexity=12, lines_of_code=80)
 ## Testing
 
 ```bash
+# from repository root:
+# cd final_project_se333_NigelMaloney/CodeBase
+
 # Run all tests
 uv run pytest test_main.py -v
 
@@ -380,7 +384,7 @@ uv run pytest test_main.py::TestScanSecurityRisks -v
 
 **Q: `No module named 'mcp'` or `No module named 'fastmcp'`**
 
-Run `uv sync` from the project root to install all declared dependencies. If `uv` is not on your PATH, locate it at `~/.local/bin/uv` (macOS/Linux) or `%USERPROFILE%\.local\bin\uv.exe` (Windows).
+Run `uv sync` from the `CodeBase` directory to install all declared dependencies. If `uv` is not on your PATH, locate it at `~/.local/bin/uv` (macOS/Linux) or `%USERPROFILE%\.local\bin\uv.exe` (Windows).
 
 ---
 
@@ -391,6 +395,7 @@ Check your version with `python --version`. If below 3.14, install via [python.o
 ```bash
 pyenv install 3.14.0
 pyenv local 3.14.0
+cd CodeBase
 uv sync
 ```
 
@@ -455,6 +460,7 @@ All boolean parameters must be JSON booleans (`true`/`false`), not strings (`"tr
 **Q: `pytest` not found**
 
 ```bash
+cd CodeBase
 uv add pytest pytest-cov --dev
 ```
 
@@ -471,6 +477,7 @@ Port 8000 is occupied (a live server is already running). Stop it before running
 Write at least one test for every new branch introduced. Run:
 
 ```bash
+cd CodeBase
 uv run pytest test_main.py --cov=main --cov-report=term-missing
 ```
 
