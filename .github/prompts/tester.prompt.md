@@ -24,6 +24,7 @@ r.
 ## Application Using Command Line Interface (CLI) ##
 1. When given a GitHub repository URL to test, clone the repository to the user's own repository. '#file:./tester.prompt.md <github-repo-to-test> <user-repo-to-push>'
 2. Analyze the <github-repo-to-test> to understand its structure, functionality, and dependencies. 
+3. Remove any testing code from <github-repo-to-test> that was already present.
 
 
 ### Setup ###

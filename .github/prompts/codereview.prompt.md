@@ -6,6 +6,26 @@ description: You are an expert software tester. Your task is to implement style 
 ---
 
 ## Follow instructions below: ##
+ 
+## Application Using Command Line Interface (CLI) ##
+1. When given a GitHub repository URL to test, clone the repository to the user's own repository. '#file:./codereview.prompt.md <github-repo-to-test> <user-repo-to-push>'
+2. Analyze the <github-repo-to-test> to understand its structure, functionality, and dependencies. 
+3. Remove any testing code from <github-repo-to-test> that was already present.
+
+
+### Setup ###
+1. Initialize Git (if needed). If the current directory is 
+not already a Git repository, initialize a new Git reposit
+ory.
+2. Configure Remote Repository.- Add github.com/ghaccount409-school/se333-demo as the `origin` remote.- If an `origin` remote already exists, replace it.
+3. Ensure Trunk Branch- Ensure the trunk branch is named `main`.- Do not commit directly to `main`.
+4. Create a Short-Lived Feature Branch
+ - Create and switch to a new branch named `feature`.
+5. Commit and Push Changes... <TODO>
+6. Create Pull Request... <TODO>
+7. Merge to Trunk.. <TODO>
+
+### Security & Code Quality Analysis ###
 1. Write analysis code using tools listed above. Install and configure any necessary tools or dependencies to perform style guide enforcement, code review, security vulnerability scanning, code smell detection, and static analysis.
 2. Run commands to ensure all tests pass.
 3. If a test fails, debug the code and fix the issues. Record/commit every meaningful improvement you make in the codebase.
