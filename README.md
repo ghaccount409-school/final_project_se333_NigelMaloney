@@ -11,15 +11,16 @@ A Python-based **Model Context Protocol (MCP) server** providing automated code 
 1. [Overview](#overview)
 2. [Installation & Setup](#installation--setup)
 3. [Configuration](#configuration)
-4. [MCP Tools Reference](#mcp-tools-reference)
+4. [Running Prompt Workflows](#running-prompt-workflows)
+5. [MCP Tools Reference](#mcp-tools-reference)
    - [analyze_coverage](#analyze_coverage)
    - [generate_test_report](#generate_test_report)
    - [detect_code_smells](#detect_code_smells)
    - [scan_security_risks](#scan_security_risks)
    - [enforce_style_guide](#enforce_style_guide)
    - [check_complexity](#check_complexity)
-5. [Testing](#testing)
-6. [Troubleshooting & FAQ](#troubleshooting--faq)
+6. [Testing](#testing)
+7. [Troubleshooting & FAQ](#troubleshooting--faq)
 
 ---
 
@@ -110,6 +111,43 @@ Add the following to `%APPDATA%\Code\User\mcp.json` (Windows) or `~/.config/Code
 | Host | `127.0.0.1` | Loopback only — not exposed to network |
 | Port | `8000` | Change in `fastmcp` if needed |
 | Transport | `sse` | Required for VS Code HTTP-type connections |
+
+---
+
+## Running Prompt Workflows
+
+This repository includes prompt files used from Copilot Chat:
+
+- `.github/prompts/tester.prompt.md`
+- `.github/prompts/codereview.prompt.md`
+
+Use these commands in Copilot Chat:
+
+### Run tester workflow
+
+```text
+#file:.github/prompts/tester.prompt.md <github-repo-to-test> <user-repo-to-push>
+```
+
+Example:
+
+```text
+#file:.github/prompts/tester.prompt.md https://github.com/spring-projects/spring-petclinic https://github.com/ghaccount409-school/se333-demo
+```
+
+This matches the tester prompt instruction pattern:
+
+```text
+#file:./tester.prompt.md <github-repo-to-test> <user-repo-to-push>
+```
+
+### Run codereview workflow
+
+```text
+#file:.github/prompts/codereview.prompt.md
+```
+
+The current `codereview.prompt.md` does not require positional repository arguments in its instructions.
 
 ---
 
